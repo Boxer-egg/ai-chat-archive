@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+      # 零上传红线兜底（README 硬性约束）：lint 的 no-restricted-globals
+      # 拦截变量引用，这里再拦直接的全局调用
+      - name: zero-upload guard
+        run: |
+          if grep -rnE '\b(fetch|XMLHttpRequest|WebSocket|sendBeacon)[ (]' src/; then
+            echo 'zero-upload constraint violated' && exit 1
+          fi

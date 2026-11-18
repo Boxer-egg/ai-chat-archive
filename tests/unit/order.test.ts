@@ -20,8 +20,8 @@ describe('order（U07/U14）', () => {
   });
 
   it('精度耗尽返回 NaN 并触发重排（U14）', () => {
-    let a = 1024;
-    let b = 1024 + 1; // 极小间隔
+    const a = 1024;
+    const b = 1024 + 1; // 极小间隔
     let last = a;
     let nanHit = false;
     for (let i = 0; i < 60; i++) {

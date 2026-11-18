@@ -10,6 +10,7 @@ Chrome MV3 扩展：在支持的 AI 对话页面自动保存消息到本地 Inde
 pnpm install
 pnpm test        # vitest（88 条单元 + 集成测试）
 pnpm typecheck   # tsc --noEmit
+pnpm lint        # eslint（含零上传红线：禁止 fetch/XHR/WebSocket/sendBeacon）
 pnpm build       # 产出 dist/，chrome://extensions 加载"已解压的扩展程序"
 ```
 
