@@ -1,0 +1,28 @@
+{
+  "name": "ai-chat-archive",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI 对话本地归档浏览器扩展（Chrome MV3，仅本地，不上传）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dompurify": "^3.2.4",
+    "preact": "^11.1.0"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.31",
+    "@types/chrome": "^0.0.299",
+    "@types/node": "^26.6.6",
+    "fake-indexeddb": "^6.2.2",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.3",
+    "vite": "^5.4.19",
+    "vitest": "^2.1.8"
+  }
+}
