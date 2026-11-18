@@ -3,7 +3,6 @@
  * 导入复用 merge 通道：保证去重规则与采集一致。
  */
 import type { Account, Conversation, Message } from '../types';
-import { LIMITS } from '../../shared/constants';
 
 export const BACKUP_FORMAT = 'ai-chat-archive';
 
@@ -65,6 +64,3 @@ export function estimateBackupBytes(b: BackupFile): number {
 }
 
 export const BACKUP_WARN_BYTES = 50 * 1024 * 1024;
-
-// 限制再导出，避免循环依赖；占位常量集中在此
-export const EXPORT_LIMITS = LIMITS;

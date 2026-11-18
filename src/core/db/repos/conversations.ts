@@ -66,15 +66,6 @@ export function putSyncState(tx: IDBTransaction, state: SyncState): void {
   tx.objectStore(STORES.syncState).put(state);
 }
 
-export async function getSyncState(tx: IDBTransaction, conversationId: string): Promise<SyncState | undefined> {
-  const req = tx.objectStore(STORES.syncState).get(conversationId);
-  return new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result as SyncState | undefined);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-
 export async function listAccounts(tx: IDBTransaction): Promise<Account[]> {
   const out: Account[] = [];
   await new Promise<void>((resolve, reject) => {
