@@ -54,6 +54,8 @@ export interface RawMessage {
   streaming?: boolean;
   /** 平台提供的时间戳（毫秒），没有就留空 */
   timestamp?: number;
+  /** 生成该消息的模型标识（平台 DOM 暴露时尽力提取，缺省 undefined） */
+  model?: string;
   /** 只存 URL 与文件名，不下载本体 */
   attachments?: Array<{ type: 'image' | 'file' | 'link'; name?: string; url?: string }>;
 }
@@ -133,6 +135,8 @@ export interface Message {
   /** 展示顺序，浮点，见 merge/order.ts */
   order: number;
   timestamp?: number;
+  /** 模型标识（采集时平台 DOM 可见才填充），导出可带 */
+  model?: string;
   fingerprint: string;
   contentHash: string;
   status: 'draft' | 'complete';

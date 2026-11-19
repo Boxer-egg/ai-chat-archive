@@ -18,7 +18,7 @@ import type {
   RawMessage,
   Role,
 } from '../../core/types';
-import { extractHtml, extractText, findScrollable, idFromPath } from './base';
+import { extractHtml, extractModelHint, extractText, findScrollable, idFromPath } from './base';
 import { pick, type SelectorSpec } from './selectors';
 
 const S = {
@@ -142,6 +142,7 @@ export const claudeAdapter: PlatformAdapter = {
       domIndex: index,
       platformMessageId: turnKeyOf(node, role),
       streaming,
+      model: extractModelHint(node),
     };
     if (role === 'user') {
       const content = node.querySelector('[data-testid="user-message"]');

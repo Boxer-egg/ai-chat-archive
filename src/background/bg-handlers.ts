@@ -190,6 +190,7 @@ export async function importApply(backupJson: string) {
         domIndex: i,
         platformMessageId: m.platformMessageId,
         timestamp: m.timestamp,
+        model: m.model,
       })),
       now: Date.now(),
       adapterVersion: 'import',

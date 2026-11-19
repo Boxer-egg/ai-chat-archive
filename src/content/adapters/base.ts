@@ -89,6 +89,22 @@ export function idFromPath(url: URL, pattern: RegExp): string | null {
   return m ? m[1] : null;
 }
 
+/**
+ * 尽力提取消息对应的模型标识：先看节点自身与祖先的 data-model，
+ * 再看节点内 select 按钮的 aria-label（部分平台把当前模型放那里）。
+ * 平台 DOM 未暴露时返回 undefined——各平台实测确认标识位置后可在此扩展。
+ */
+export function extractModelHint(node: Element): string | undefined {
+  const el = node.closest('[data-model]');
+  const fromAttr = el?.getAttribute('data-model')?.trim();
+  if (fromAttr) return fromAttr;
+  const label = node
+    .querySelector('[aria-label]')
+    ?.getAttribute('aria-label')
+    ?.match(/gpt-\S+|claude[\w.-]*|sonnet|opus|haiku|deepseek[\w.-]*|kimi[\w.-]*|grok[\w.-]*/i)?.[0];
+  return label ?? undefined;
+}
+
 export function makeCtx(url: string, document: Document, now = Date.now()): AdapterContext {
   return { url: new URL(url), document, now };
 }

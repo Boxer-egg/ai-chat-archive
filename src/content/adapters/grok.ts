@@ -16,7 +16,7 @@ import type {
   RawMessage,
   Role,
 } from '../../core/types';
-import { extractHtml, extractText, idFromPath } from './base';
+import { extractHtml, extractModelHint, extractText, idFromPath } from './base';
 import { pick, type SelectorSpec } from './selectors';
 
 const S = {
@@ -94,6 +94,7 @@ export const grokAdapter: PlatformAdapter = {
         html: extractHtml(clone),
         domIndex: index,
         streaming: index === nodes.length - 1 && this.isStreaming(ctx),
+        model: extractModelHint(node),
       };
     }
     return { role, text: extractText(node), html: extractHtml(node), domIndex: index };

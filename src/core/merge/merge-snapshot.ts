@@ -126,6 +126,7 @@ export async function mergeSnapshot(input: MergeInput): Promise<MergeOutput> {
       status: newStatus(p, m),
       truncated: truncated || undefined,
       domIndex: p.raw.domIndex,
+      model: p.raw.model ?? m.model,
       updatedAt: now,
       adapterVersion,
     };
@@ -135,7 +136,8 @@ export async function mergeSnapshot(input: MergeInput): Promise<MergeOutput> {
     matched.set(p.index, m);
     used.add(m.id);
     const status = newStatus(p, m);
-    if (m.contentHash !== p.hash || status !== m.status) {
+    const modelChanged = p.raw.model !== undefined && p.raw.model !== m.model;
+    if (m.contentHash !== p.hash || status !== m.status || modelChanged) {
       rekeys.push({ p, m });
     } else {
       // 内容未变：只在位置移动或距上次落库超过 TOUCH_REFRESH_MS 时才写回，
@@ -299,6 +301,7 @@ export async function mergeSnapshot(input: MergeInput): Promise<MergeOutput> {
       status: p.raw.streaming ? 'draft' : 'complete',
       truncated: truncated || undefined,
       domIndex: p.raw.domIndex,
+      model: p.raw.model,
       savedAt: now,
       updatedAt: now,
       adapterVersion,

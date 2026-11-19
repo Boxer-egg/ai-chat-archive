@@ -87,8 +87,11 @@ export function conversationToMarkdown(conv: Conversation, messages: Message[]):
     `created_at: ${new Date(conv.createdAt).toISOString()}`,
     `updated_at: ${new Date(conv.updatedAt).toISOString()}`,
     `message_count: ${conv.messageCount}`,
-    '---',
   ];
+  // 模型信息：取最近一条带模型标识的助手消息（借鉴 socketteer 的模型保留思路）
+  const lastModel = [...messages].reverse().find((m) => m.model)?.model;
+  if (lastModel) fm.push(`model: ${lastModel}`);
+  fm.push('---');
   const body = messages
     .filter((m) => m.status === 'complete')
     .sort((a, b) => a.order - b.order)

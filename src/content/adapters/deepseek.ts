@@ -17,7 +17,7 @@ import type {
   PlatformAdapter,
   RawMessage,
 } from '../../core/types';
-import { extractHtml, extractText, idFromPath } from './base';
+import { extractHtml, extractModelHint, extractText, idFromPath } from './base';
 import { pick, type SelectorSpec } from './selectors';
 
 const S = {
@@ -116,6 +116,7 @@ export const deepseekAdapter: PlatformAdapter = {
         html: extractHtml(md),
         domIndex: index,
         streaming,
+        model: extractModelHint(node),
       };
     }
     return null;

@@ -18,7 +18,7 @@ import type {
   PlatformAdapter,
   RawMessage,
 } from '../../core/types';
-import { extractHtml, extractText, idFromPath, isHidden } from './base';
+import { extractHtml, extractModelHint, extractText, idFromPath, isHidden } from './base';
 import { pick, type SelectorSpec } from './selectors';
 
 /** 会话路径：/c/<id>，或 GPTs 对话 /g/<slug>/c/<id>（消息 DOM 与普通对话同源） */
@@ -129,6 +129,7 @@ export const chatgptAdapter: PlatformAdapter = {
         html: extractHtml(node),
         domIndex: index,
         streaming: index === nodes.length - 1 && this.isStreaming(ctx),
+        model: extractModelHint(node),
       };
     }
     // 旧版整轮 article：拆出角色

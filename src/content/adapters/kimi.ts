@@ -16,7 +16,7 @@ import type {
   RawMessage,
   Role,
 } from '../../core/types';
-import { extractHtml, extractText, findScrollable, idFromPath } from './base';
+import { extractHtml, extractModelHint, extractText, findScrollable, idFromPath } from './base';
 import { pick, type SelectorSpec } from './selectors';
 
 const S = {
@@ -131,6 +131,7 @@ export const kimiAdapter: PlatformAdapter = {
           html: extractHtml(md),
           domIndex: index,
           streaming: index === nodes.length - 1 && this.isStreaming(ctx),
+          model: extractModelHint(node),
         };
       }
     }
