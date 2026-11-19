@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import '../styles.css';
 import { api } from '../api';
 import { sanitizeHtml } from '../../core/sanitize';
+import { exportFileName } from '../../core/export/filename';
 import type { Account, Conversation, Message } from '../../core/types';
 import type { SearchHitConversation } from '../../core/protocol';
 
@@ -120,7 +121,11 @@ function App() {
     try {
       const { backup } = (await api.exportJson(conversationId)) as { backup: unknown };
       download(
-        `ai-chat-archive-${new Date().toISOString().slice(0, 10)}.json`,
+        exportFileName(
+          conversationId ? detail?.conversation.title : undefined,
+          new Date().toISOString().slice(0, 10),
+          'json',
+        ),
         JSON.stringify(backup, null, 2),
         'application/json',
       );
@@ -133,7 +138,11 @@ function App() {
     try {
       const { markdown } = (await api.exportMarkdown(conversationId)) as { markdown: string };
       download(
-        `ai-chat-archive-${new Date().toISOString().slice(0, 10)}.md`,
+        exportFileName(
+          conversationId ? detail?.conversation.title : undefined,
+          new Date().toISOString().slice(0, 10),
+          'md',
+        ),
         markdown,
         'text/markdown',
       );
