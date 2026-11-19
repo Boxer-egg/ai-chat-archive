@@ -2,7 +2,7 @@
 
 Chrome MV3 扩展：在支持的 AI 对话页面自动保存消息到本地 IndexedDB。**仅本地，不上传任何数据。**
 
-技术方案见 [docs/技术方案.md](docs/技术方案.md)。
+技术方案见 [docs/技术方案.md](docs/技术方案.md)；同类项目对比与借鉴清单见 [docs/竞品调研.md](docs/竞品调研.md)；协作者环境说明见 [AGENTS.md](AGENTS.md)。
 
 ## 开发
 
