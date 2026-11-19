@@ -8,7 +8,7 @@ function escapeMd(text: string): string {
   return text;
 }
 
-function htmlToMd(html: string): string {
+function htmlToMd(html: string, imageMode: 'link' | 'omit' = 'link'): string {
   const tpl = document.createElement('template');
   tpl.innerHTML = html;
   const walk = (node: Node): string => {
@@ -54,7 +54,8 @@ function htmlToMd(html: string): string {
       case 'A': {
         const href = el.getAttribute('href');
         const label = kids();
-        if (el.getAttribute('data-archive-image') === 'true' && href) {
+        if (el.getAttribute('data-archive-image') === 'true') {
+          if (imageMode === 'omit') return ''; // 图片省略模式：占位链接也不输出
           return `![${label.replace(/^\[图片[：:]?/, '').replace(/\]$/, '')}](${href})`;
         }
         return href ? `[${label}](${href})` : label;
@@ -70,13 +71,17 @@ function htmlToMd(html: string): string {
   return Array.from(tpl.content.childNodes).map(walk).join('').trim();
 }
 
-function messageToMd(m: Message): string {
+function messageToMd(m: Message, imageMode: 'link' | 'omit'): string {
   const who = m.role === 'user' ? '用户' : m.role === 'assistant' ? '助手' : m.role;
-  const body = m.contentHtml ? htmlToMd(m.contentHtml) : escapeMd(m.contentText);
+  const body = m.contentHtml ? htmlToMd(m.contentHtml, imageMode) : escapeMd(m.contentText);
   return `## ${who}\n\n${body}\n`;
 }
 
-export function conversationToMarkdown(conv: Conversation, messages: Message[]): string {
+export function conversationToMarkdown(
+  conv: Conversation,
+  messages: Message[],
+  opts: { imageMode?: 'link' | 'omit' } = {},
+): string {
   const fm = [
     '---',
     `platform: ${conv.platform}`,
@@ -95,7 +100,7 @@ export function conversationToMarkdown(conv: Conversation, messages: Message[]):
   const body = messages
     .filter((m) => m.status === 'complete')
     .sort((a, b) => a.order - b.order)
-    .map(messageToMd)
+    .map((m) => messageToMd(m, opts.imageMode ?? 'link'))
     .join('\n');
   return `${fm.join('\n')}\n\n# ${conv.title}\n\n${body}\n`;
 }

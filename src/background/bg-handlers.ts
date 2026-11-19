@@ -128,6 +128,7 @@ export async function exportJson(conversationId?: string) {
 }
 
 export async function exportMarkdown(conversationId?: string) {
+  const settings = await getSettings();
   const backup = await collectBackup(conversationId);
   const byConv = new Map<string, Message[]>();
   for (const m of backup.messages) {
@@ -136,7 +137,9 @@ export async function exportMarkdown(conversationId?: string) {
     byConv.set(m.conversationId, arr);
   }
   const parts = backup.conversations.map((c) =>
-    conversationToMarkdown(c, (byConv.get(c.id) ?? []).sort((a, b) => a.order - b.order)),
+    conversationToMarkdown(c, (byConv.get(c.id) ?? []).sort((a, b) => a.order - b.order), {
+      imageMode: settings.imageExportMode,
+    }),
   );
   return { markdown: parts.join('\n\n---\n\n') };
 }

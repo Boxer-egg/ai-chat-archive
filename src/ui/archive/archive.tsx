@@ -68,7 +68,12 @@ function App() {
   const [searching, setSearching] = useState(false);
   const [hits, setHits] = useState<SearchHitConversation[] | null>(null);
   const [notice, setNotice] = useState('');
+  const [imageMode, setImageMode] = useState<'link' | 'omit'>('link');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    void api.getSettings().then((s) => setImageMode(s.imageExportMode));
+  }, []);
 
   const reload = useCallback(async () => {
     try {
@@ -232,6 +237,18 @@ function App() {
         {accounts.map((a) => (
           <option key={a.id} value={a.accountKey}>{a.label}</option>
         ))}
+      </select>
+      <select
+        value={imageMode}
+        title="Markdown 导出时图片的处理方式"
+        onChange={(e) => {
+          const mode = (e.target as HTMLSelectElement).value as 'link' | 'omit';
+          setImageMode(mode);
+          void api.setSettings({ imageExportMode: mode });
+        }}
+      >
+        <option value="link">图片：链接</option>
+        <option value="omit">图片：省略</option>
       </select>
       <span class="grow" />
       <button onClick={() => void doExportMarkdown()}>导出 Markdown</button>

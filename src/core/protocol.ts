@@ -21,12 +21,15 @@ export interface Settings {
   /** 暂停采集的域名列表 */
   disabledHosts: string[];
   debugLogging: boolean;
+  /** Markdown 导出时图片的处理方式：link=保留链接（默认），omit=不导出图片 */
+  imageExportMode: 'link' | 'omit';
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   autoSave: true,
   disabledHosts: [],
   debugLogging: false,
+  imageExportMode: 'link',
 };
 
 // ---------- 内容脚本状态 ----------
