@@ -61,3 +61,39 @@ describe('ChatGPT 完整页面样例（match/标题/账号）', () => {
     expect(chatgptAdapter.getAccountHint(ctx)?.rawId).toBe('user-0000000000000000000000a');
   });
 });
+
+describe('ChatGPT 可见性过滤与 GPTs URL（借鉴 pionxzh/chatgpt-exporter）', () => {
+  // ChatGPT SPA 会把已切换走的旧会话保留在隐藏祖先下，必须只采可见节点
+  const html = `
+    <main>
+      <div class="thread-scroll-container">
+        <div class="bg-user-message"><div class="text-size-chat whitespace-pre-wrap">当前问题</div></div>
+        <div class="MarkdownRoot">当前回答</div>
+      </div>
+      <div style="display:none">
+        <div class="bg-user-message"><div class="text-size-chat whitespace-pre-wrap">旧会话问题</div></div>
+        <div class="MarkdownRoot">旧会话回答</div>
+      </div>
+    </main>`;
+
+  it('隐藏祖先下的旧会话节点被排除', () => {
+    const ctx = makeCtx('https://chatgpt.com/c/6abd1314-6c44-83ea-9ed7-69a23e89bda0', docOf(html));
+    const nodes = chatgptAdapter.getMessageNodes(ctx);
+    expect(nodes).toHaveLength(2);
+    const texts = nodes.map((n) => chatgptAdapter.parseMessage(n, ctx)?.text);
+    expect(texts).toContain('当前问题');
+    expect(texts).not.toContain('旧会话问题');
+  });
+
+  it('GPTs 对话 URL（/g/<slug>/c/<id>）可识别，会话 ID 取 /c/ 段', () => {
+    const url = new URL('https://chatgpt.com/g/g-2fkFE8rbuD-dalle/c/6abd1314-6c44-83ea-9ed7-69a23e89bda0');
+    expect(chatgptAdapter.match(url)).toBe(true);
+    const ctx = makeCtx(url.href, docOf(html));
+    expect(chatgptAdapter.getConversation(ctx)?.platformConversationId).toBe('6abd1314-6c44-83ea-9ed7-69a23e89bda0');
+  });
+
+  it('非对话页路径不匹配', () => {
+    expect(chatgptAdapter.match(new URL('https://chatgpt.com/'))).toBe(false);
+    expect(chatgptAdapter.match(new URL('https://chatgpt.com/share/abc-123'))).toBe(false);
+  });
+});

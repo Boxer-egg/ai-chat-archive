@@ -69,6 +69,20 @@ export function findScrollable(start: Element | null): HTMLElement | null {
   return null;
 }
 
+/**
+ * 元素是否处于隐藏祖先下（SPA 会把已切换走的旧内容保留在 display:none 容器里）。
+ * 用计算样式链式检查而非几何信息，兼容 jsdom 等无布局环境（测试可直接用）。
+ */
+export function isHidden(el: Element): boolean {
+  let cur: Element | null = el;
+  while (cur) {
+    const s = getComputedStyle(cur as HTMLElement);
+    if (s.display === 'none' || s.visibility === 'hidden') return true;
+    cur = cur.parentElement;
+  }
+  return false;
+}
+
 /** 从 URL 路径提取会话 ID 的通用工具 */
 export function idFromPath(url: URL, pattern: RegExp): string | null {
   const m = url.pathname.match(pattern);

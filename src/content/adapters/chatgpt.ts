@@ -18,8 +18,11 @@ import type {
   PlatformAdapter,
   RawMessage,
 } from '../../core/types';
-import { extractHtml, extractText, idFromPath } from './base';
+import { extractHtml, extractText, idFromPath, isHidden } from './base';
 import { pick, type SelectorSpec } from './selectors';
+
+/** 会话路径：/c/<id>，或 GPTs 对话 /g/<slug>/c/<id>（消息 DOM 与普通对话同源） */
+const CONV_PATH = /^\/(?:g\/[a-z0-9-]+\/)?c\/([0-9a-f-]{8,})/i;
 
 const S = {
   scroller: {
@@ -55,12 +58,12 @@ export const chatgptAdapter: PlatformAdapter = {
   match(url: URL): boolean {
     return (
       (url.hostname === 'chatgpt.com' || url.hostname === 'chat.openai.com') &&
-      idFromPath(url, /^\/c\/([0-9a-f-]{8,})/i) !== null
+      idFromPath(url, CONV_PATH) !== null
     );
   },
 
   getConversation(ctx: AdapterContext): ConversationRef | null {
-    const id = idFromPath(ctx.url, /^\/c\/([0-9a-f-]{8,})/i);
+    const id = idFromPath(ctx.url, CONV_PATH);
     return id ? { platformConversationId: id, source: 'url' } : null;
   },
 
@@ -99,10 +102,15 @@ export const chatgptAdapter: PlatformAdapter = {
       ...Array.from(ctx.document.querySelectorAll('[class*=MarkdownRoot]')),
       ...Array.from(ctx.document.querySelectorAll(LEGACY_ROW)),
     ];
-    return nodes.sort((a, b) => {
+    const sorted = nodes.sort((a, b) => {
       const pos = a.compareDocumentPosition(b);
       return pos & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
     });
+    // ChatGPT 会把已切换走的旧会话保留在隐藏祖先（display:none）下：
+    // 只采可见节点；若过滤后为空（无布局环境/整页隐藏），退回全量以免误伤
+    // （借鉴 pionxzh/chatgpt-exporter 的 checkIfConversationStarted 思路）
+    const visible = sorted.filter((n) => !isHidden(n));
+    return visible.length > 0 ? visible : sorted;
   },
 
   parseMessage(node: Element, ctx: AdapterContext, frame?: ParseFrame): RawMessage | null {
