@@ -4,7 +4,7 @@
  */
 export function sanitizeFileName(name: string, maxLen = 60): string {
   const cleaned = name
-    .replace(/[<>:"/\\|?*-]/g, '') // 控制字符
+    .replace(/[\x00-\x1f]/g, '') // 控制字符
     .replace(/[<>:"/\\|?*]/g, '') // 各系统非法字符
     .replace(/\s+/g, ' ')
     .trim()
