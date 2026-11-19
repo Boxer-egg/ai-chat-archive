@@ -156,6 +156,24 @@ function App() {
     }
   };
 
+  /** OpenAI 官方 conversations.json 格式（可被 SillyTavern 等工具读取） */
+  const doExportOpenAI = async (conversationId?: string) => {
+    try {
+      const { openaiJson } = (await api.exportOpenAI(conversationId)) as { openaiJson: unknown };
+      download(
+        exportFileName(
+          conversationId ? `${detail?.conversation.title ?? ''}-openai` : 'openai-format',
+          new Date().toISOString().slice(0, 10),
+          'json',
+        ),
+        JSON.stringify(openaiJson, null, 2),
+        'application/json',
+      );
+    } catch (err) {
+      setNotice(`导出失败：${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   const doImport = async (file: File) => {
     try {
       const text = await file.text();
@@ -253,6 +271,7 @@ function App() {
       <span class="grow" />
       <button onClick={() => void doExportMarkdown()}>导出 Markdown</button>
       <button onClick={() => void doExportJson()}>导出备份</button>
+      <button onClick={() => void doExportOpenAI()}>OpenAI 格式</button>
       <button onClick={() => fileRef.current?.click()}>导入</button>
       <button class="danger" onClick={() => void doClear()}>清空</button>
       <input
@@ -332,6 +351,7 @@ function App() {
                 </button>
                 <button onClick={() => void doExportMarkdown(detail.conversation.id)}>导出 MD</button>
                 <button onClick={() => void doExportJson(detail.conversation.id)}>导出 JSON</button>
+                <button onClick={() => void doExportOpenAI(detail.conversation.id)}>OpenAI</button>
                 <button
                   class="danger"
                   onClick={() => {

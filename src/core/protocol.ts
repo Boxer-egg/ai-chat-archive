@@ -93,6 +93,7 @@ export const PROTOCOL = {
   CLEAR_ALL: 'CLEAR_ALL',
   EXPORT_JSON: 'EXPORT_JSON',
   EXPORT_MARKDOWN: 'EXPORT_MARKDOWN',
+  EXPORT_OPENAI: 'EXPORT_OPENAI',
   IMPORT_PREVIEW: 'IMPORT_PREVIEW',
   IMPORT_APPLY: 'IMPORT_APPLY',
 } as const;
@@ -111,5 +112,6 @@ export type ProtocolMessage =
   | { type: typeof PROTOCOL.CLEAR_ALL }
   | { type: typeof PROTOCOL.EXPORT_JSON; conversationId?: string }
   | { type: typeof PROTOCOL.EXPORT_MARKDOWN; conversationId?: string }
+  | { type: typeof PROTOCOL.EXPORT_OPENAI; conversationId?: string }
   | { type: typeof PROTOCOL.IMPORT_PREVIEW; backupJson: string }
   | { type: typeof PROTOCOL.IMPORT_APPLY; backupJson: string };
