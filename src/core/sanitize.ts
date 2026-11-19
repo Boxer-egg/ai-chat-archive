@@ -29,8 +29,36 @@ function replaceImages(root: ParentNode, doc: Document): void {
   }
 }
 
+/**
+ * KaTeX 数学公式保护（借鉴 pionxzh/chatgpt-exporter 的 protectMath 思路）：
+ * KaTeX 依赖的 mathml/annotation 标签不在白名单，DOMPurify 消毒后 TeX 原文
+ * 会散成文本且混着 katex-html 的渲染符号。必须在消毒前把 .katex 整体替换为
+ * 保留 TeX 的占位 span（class 带 math- 前缀，class 白名单放行）：
+ *   行内 → <span class="math-inline">$...$</span>
+ *   独立行（.katex-display 祖先）→ <span class="math-display">$$...$$</span>
+ * 导出 Markdown 时占位 span 走默认分支原样输出文本，无需额外处理。
+ */
+function replaceMath(root: ParentNode, doc: Document): void {
+  for (const katex of Array.from(root.querySelectorAll('span.katex'))) {
+    const tex = katex
+      .querySelector('annotation[encoding="application/x-tex"]')
+      ?.textContent?.trim();
+    if (!tex) continue; // 非标准结构：保留原样降级
+    const display = katex.closest('.katex-display') !== null;
+    const span = doc.createElement('span');
+    span.className = display ? 'math-display' : 'math-inline';
+    span.textContent = display ? `$$${tex}$$` : `$${tex}$`;
+    katex.replaceWith(span);
+  }
+}
+
 export function sanitizeHtml(dirty: string): string {
-  const clean = DOMPurify.sanitize(dirty, {
+  // 数学公式在消毒前处理（annotation 标签消毒后无法提取）
+  const pre = document.createElement('template');
+  pre.innerHTML = dirty; // 仅做 DOM 查询与替换，不触发脚本；随后全部经 DOMPurify
+  replaceMath(pre.content, document);
+
+  const clean = DOMPurify.sanitize(pre.innerHTML, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
     ALLOW_DATA_ATTR: false,
