@@ -83,6 +83,13 @@ export interface PlatformAdapter {
   parseMessage(node: Element, ctx: AdapterContext, frame?: ParseFrame): RawMessage | null;
   isStreaming(ctx: AdapterContext): boolean;
   getScrollContainer(ctx: AdapterContext): HTMLElement | null;
+
+  /**
+   * 采集前准备（可选）：如点击展开懒渲染的折叠面板（Kimi 思考步骤）。
+   * 内容异步渲染，当次快照只有标题，下一次 MutationObserver 触发的
+   * 快照即可提取到内容。已展开的应跳过，避免触发回环。
+   */
+  prepareForSnapshot?(ctx: AdapterContext): void;
   getLoadMoreTrigger?(ctx: AdapterContext): Element | null;
   diagnose(ctx: AdapterContext): AdapterDiagnosis;
 }

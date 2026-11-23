@@ -16,18 +16,18 @@ const assistantSeg = `
   <div class="toolcall-flow">
     <div class="toolcall-flow__item">
       <div class="toolcall-container thinking-container">
-        <div class="toolcall-title-container">
+        <div class="toolcall-title-container is-expandable" aria-expanded="true">
           <span class="toolcall-title-name-text">使用画布进行编码</span>
         </div>
-        <div class="markdown-container toolcall-content-text">Let me draw the boxes first</div>
+        <div class="toolcall-content">Let me draw the boxes first</div>
       </div>
     </div>
     <div class="toolcall-flow__item">
       <div class="toolcall-container thinking-container">
-        <div class="toolcall-title-container">
+        <div class="toolcall-title-container is-expandable" aria-expanded="false">
           <span class="toolcall-title-name-text">运行 Python 代码</span>
         </div>
-        <div class="markdown-container toolcall-content-text">print('align check')</div>
+        <div class="toolcall-content"></div>
       </div>
     </div>
   </div>
@@ -69,6 +69,7 @@ describe('Kimi 思考过程归档（details 折叠块）', () => {
     expect(raw!.html).toContain('<details>');
     expect(raw!.html).toContain('<summary>思考过程（3 步）</summary>');
     expect(raw!.html).toContain('使用画布进行编码');
+    expect(raw!.html).toContain('Let me draw the boxes first'); // 已渲染步骤有内容
     expect(raw!.html).toContain('基本骨架好了');
     // ASCII 图保留（方框字符在，且 details 之外）
     expect(raw!.html).toContain('│格栅│');
@@ -80,6 +81,53 @@ describe('Kimi 思考过程归档（details 折叠块）', () => {
     const raw = kimiAdapter.parseMessage(ctx.document.querySelector('.segment')!, ctx);
     expect(raw!.text).toContain('普通回复');
     expect(raw!.html).not.toContain('<details>');
+  });
+
+  it('prepareForSnapshot 只点击折叠的步骤（已展开跳过，防回环）', () => {
+    const ctx = ctxOf(assistantSeg);
+    const clicked: string[] = [];
+    // jsdom 无 Vue：用监听器记录被点击的标题
+    ctx.document.querySelectorAll('.toolcall-title-container.is-expandable').forEach((el) => {
+      el.addEventListener('click', () => {
+        clicked.push(el.querySelector('.toolcall-title-name-text')?.textContent?.trim() ?? '');
+      });
+    });
+    kimiAdapter.prepareForSnapshot!(ctx);
+    expect(clicked).toEqual(['运行 Python 代码']); // aria-expanded=false 的才被点击
+  });
+
+  it('HTML 变化（思考展开）触发 update，text 未变也落库', async () => {
+    const { mergeSnapshot } = await import('@core/merge/merge-snapshot');
+    const CONV = 'kimi:a:think';
+    const folded = await mergeSnapshot({
+      conversationId: CONV,
+      existing: [],
+      raws: [
+        { role: 'user', text: '问', domIndex: 0 },
+        { role: 'assistant', text: '正文', domIndex: 1, html: '<p>正文</p>' },
+      ],
+      now: 1,
+      adapterVersion: 't',
+    });
+    expect(folded.all[1].contentHtml).toBe('<p>正文</p>');
+
+    const expanded = await mergeSnapshot({
+      conversationId: CONV,
+      existing: folded.all,
+      raws: [
+        { role: 'user', text: '问', domIndex: 0 },
+        {
+          role: 'assistant',
+          text: '正文', // text 不变
+          domIndex: 1,
+          html: '<details><summary>思考过程（1 步）</summary><p>独白</p></details><p>正文</p>',
+        },
+      ],
+      now: 2,
+      adapterVersion: 't',
+    });
+    expect(expanded.updated).toBe(1);
+    expect(expanded.all[1].contentHtml).toContain('独白');
   });
 
   it('导出 Markdown 保留折叠块', () => {

@@ -137,7 +137,10 @@ export async function mergeSnapshot(input: MergeInput): Promise<MergeOutput> {
     used.add(m.id);
     const status = newStatus(p, m);
     const modelChanged = p.raw.model !== undefined && p.raw.model !== m.model;
-    if (m.contentHash !== p.hash || status !== m.status || modelChanged) {
+    // HTML 变化也触发更新：思考折叠面板展开后内容才进 DOM（text 不变仅 html 变），
+    // 不纳入则展开思考不会被保存
+    const htmlChanged = p.raw.html !== undefined && p.raw.html !== m.contentHtml;
+    if (m.contentHash !== p.hash || status !== m.status || modelChanged || htmlChanged) {
       rekeys.push({ p, m });
     } else {
       // 内容未变：只在位置移动或距上次落库超过 TOUCH_REFRESH_MS 时才写回，

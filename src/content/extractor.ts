@@ -11,6 +11,12 @@ export interface ExtractResult {
 }
 
 export function extractSnapshot(adapter: PlatformAdapter, ctx: AdapterContext): ExtractResult {
+  // 采集前准备：展开懒渲染的折叠面板（异步渲染，下一波快照提取内容）
+  try {
+    adapter.prepareForSnapshot?.(ctx);
+  } catch {
+    /* 准备失败不阻断采集 */
+  }
   const nodes = adapter.getMessageNodes(ctx);
   const raws: RawMessage[] = [];
   let parseFailures = 0;

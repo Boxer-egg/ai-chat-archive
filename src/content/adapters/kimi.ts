@@ -65,8 +65,8 @@ function escapeHtmlText(s: string): string {
 
 /**
  * 提取思考过程为 <details> 折叠块（2026-11-23 实测两种形态）：
- * - .toolcall-flow__item：Kimi 思考折叠面板的步骤（标题"使用画布进行编码"等 +
- *   toolcall 类 markdown-container 内的分析文本），剔除代码块工具条
+ * - .toolcall-flow__item：Kimi 思考折叠面板的步骤；内容在 .toolcall-content
+ *   （懒渲染：折叠时为空，展开后才有文本，见 prepareForSnapshot）
  * - 正文容器之前的 plain markdown-container：思考中间步骤文本
  * 思考不进 contentText（保持搜索与导出正文干净），只随 HTML 归档。
  */
@@ -74,14 +74,25 @@ function thinkingDetailsHtml(node: Element, bodyMd: Element): string | undefined
   const steps: string[] = [];
   for (const item of Array.from(node.querySelectorAll('.toolcall-flow__item'))) {
     const title = item.querySelector('.toolcall-title-name-text')?.textContent?.trim();
-    const content = [...item.querySelectorAll('.markdown-container')]
-      .map((m) => {
-        const c = m.cloneNode(true) as Element;
-        for (const n of Array.from(c.querySelectorAll('.sticky-release'))) n.remove();
-        return c.textContent?.trim() ?? '';
-      })
-      .filter(Boolean)
-      .join('\n');
+    // 内容：懒渲染容器 .toolcall-content（含代码块时剔除 .sticky-release 工具条）
+    let content = '';
+    const contentEl = item.querySelector('.toolcall-content');
+    if (contentEl) {
+      const clone = contentEl.cloneNode(true) as Element;
+      for (const n of Array.from(clone.querySelectorAll('.sticky-release'))) n.remove();
+      content = (clone.textContent ?? '').trim();
+    }
+    if (!content) {
+      // 兼容旧结构：内容直接放在 .markdown-container 里
+      content = [...item.querySelectorAll('.markdown-container')]
+        .map((m) => {
+          const c = m.cloneNode(true) as Element;
+          for (const n of Array.from(c.querySelectorAll('.sticky-release'))) n.remove();
+          return c.textContent?.trim() ?? '';
+        })
+        .filter(Boolean)
+        .join('\n');
+    }
     if (!title && !content) continue;
     steps.push(
       (title ? `<p><strong>${escapeHtmlText(title)}</strong></p>` : '') +
@@ -207,6 +218,24 @@ export const kimiAdapter: PlatformAdapter = {
     return root instanceof HTMLElement && /auto|scroll/.test(getComputedStyle(root).overflowY)
       ? root
       : findScrollable(root);
+  },
+
+  /**
+   * 展开懒渲染的思考步骤（.toolcall-content 折叠时不渲染内容）。
+   * 点击已展开的跳过（aria-expanded=true），避免 MutationObserver 回环；
+   * 内容异步渲染，下一波快照即可提取。
+   */
+  prepareForSnapshot(ctx: AdapterContext): void {
+    for (const title of Array.from(
+      ctx.document.querySelectorAll('.toolcall-title-container.is-expandable'),
+    )) {
+      if (title.getAttribute('aria-expanded') === 'true') continue;
+      try {
+        (title as HTMLElement).click();
+      } catch {
+        /* 单个展开失败不阻断 */
+      }
+    }
   },
 
   diagnose(ctx: AdapterContext): AdapterDiagnosis {
