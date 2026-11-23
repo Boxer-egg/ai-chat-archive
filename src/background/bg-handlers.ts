@@ -12,7 +12,6 @@ import {
 import { listByConversation } from '../core/db/repos/messages';
 import { searchMessages } from '../core/search';
 import { buildBackup, estimateBackupBytes, parseBackup, type BackupFile } from '../core/export/json';
-import { conversationToMarkdown } from '../core/export/markdown';
 import { conversationToOpenAI } from '../core/export/openai';
 import { mergeSnapshot } from '../core/merge/merge-snapshot';
 import { applyMerge } from '../core/db/repos/messages';
@@ -126,23 +125,6 @@ async function collectBackup(conversationId?: string): Promise<BackupFile> {
 
 export async function exportJson(conversationId?: string) {
   return { backup: await collectBackup(conversationId) };
-}
-
-export async function exportMarkdown(conversationId?: string) {
-  const settings = await getSettings();
-  const backup = await collectBackup(conversationId);
-  const byConv = new Map<string, Message[]>();
-  for (const m of backup.messages) {
-    const arr = byConv.get(m.conversationId) ?? [];
-    arr.push(m);
-    byConv.set(m.conversationId, arr);
-  }
-  const parts = backup.conversations.map((c) =>
-    conversationToMarkdown(c, (byConv.get(c.id) ?? []).sort((a, b) => a.order - b.order), {
-      imageMode: settings.imageExportMode,
-    }),
-  );
-  return { markdown: parts.join('\n\n---\n\n') };
 }
 
 /** OpenAI 官方 conversations.json 格式（单会话/全部），供 SillyTavern 等工具读取 */

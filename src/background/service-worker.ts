@@ -84,9 +84,6 @@ chrome.runtime.onMessage.addListener((msg: ProtocolMessage, sender, sendResponse
     case PROTOCOL.EXPORT_JSON:
       respond(handlers.exportJson(msg.conversationId), sendResponse);
       return true;
-    case PROTOCOL.EXPORT_MARKDOWN:
-      respond(handlers.exportMarkdown(msg.conversationId), sendResponse);
-      return true;
     case PROTOCOL.EXPORT_OPENAI:
       respond(handlers.exportOpenAI(msg.conversationId), sendResponse);
       return true;    case PROTOCOL.IMPORT_PREVIEW:

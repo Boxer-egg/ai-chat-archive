@@ -65,3 +65,65 @@ input[type='text'], select {
 .muted { color: var(--muted); }
 .row { display: flex; align-items: center; gap: 8px; }
 .grow { flex: 1; }
+
+/* ---------- 消息流（归档页详情）：类 ChatGPT/Kimi 的阅读体验 ---------- */
+
+.msg { margin-bottom: 20px; }
+.msg-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+
+.msg-body {
+  line-height: 1.7;
+  font-size: 14px;
+  word-break: break-word;
+}
+.msg-body > :last-child { margin-bottom: 0; }
+.msg-body p { margin: 0 0 10px; }
+.msg-body h1, .msg-body h2, .msg-body h3,
+.msg-body h4, .msg-body h5, .msg-body h6 { margin: 14px 0 8px; line-height: 1.4; }
+.msg-body ul, .msg-body ol { margin: 0 0 10px; padding-left: 22px; }
+.msg-body blockquote {
+  margin: 0 0 10px;
+  padding-left: 12px;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+.msg-body table { border-collapse: collapse; margin-bottom: 10px; }
+.msg-body th, .msg-body td { border: 1px solid var(--border); padding: 4px 10px; }
+.msg-body a { color: var(--accent); }
+.msg-body img { max-width: 100%; }
+
+/* 用户消息：浅灰圆角气泡（ChatGPT bg-user-message 风格）；助手消息白底无气泡 */
+.msg-user .msg-body {
+  background: var(--chip);
+  border-radius: 16px;
+  padding: 10px 16px;
+}
+
+/* 代码块：等宽 + 不折行是 ASCII 方框图对齐的硬约束，不可改 white-space */
+.msg-body pre {
+  background: var(--chip);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.msg-body code {
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+.msg-body pre code { font-size: inherit; }
+
+/* 思考过程折叠块 */
+.msg-body details {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 0 0 10px;
+  background: color-mix(in srgb, var(--chip) 45%, transparent);
+}
+.msg-body summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.msg-body details[open] summary { margin-bottom: 6px; }

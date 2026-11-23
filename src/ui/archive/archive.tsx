@@ -5,6 +5,8 @@ import '../styles.css';
 import { api } from '../api';
 import { sanitizeHtml } from '../../core/sanitize';
 import { exportFileName } from '../../core/export/filename';
+import { conversationToMarkdown } from '../../core/export/markdown';
+import type { BackupFile } from '../../core/export/json';
 import { ARCHIVE_CHANNEL } from '../../shared/constants';
 import type { Account, Conversation, Message } from '../../core/types';
 import type { SearchHitConversation } from '../../core/protocol';
@@ -44,7 +46,7 @@ function MessageBody({ html, text }: { html?: string; text: string }) {
       ref.current.appendChild(tpl.content.cloneNode(true));
     }
   }, [html]);
-  if (!html) return <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>;
+  if (!html) return <div class="msg-body" style={{ whiteSpace: 'pre-wrap' }}>{text}</div>;
   return <div ref={ref} class="msg-body" />;
 }
 
@@ -157,16 +159,26 @@ function App() {
     }
   };
 
+  /** Markdown 转换在 UI 侧进行（core 依赖 DOM，SW 环境没有 document） */
   const doExportMarkdown = async (conversationId?: string) => {
     try {
-      const { markdown } = (await api.exportMarkdown(conversationId)) as { markdown: string };
+      const { backup } = (await api.exportJson(conversationId)) as { backup: BackupFile };
+      const parts = backup.conversations.map((c) =>
+        conversationToMarkdown(
+          c,
+          backup.messages
+            .filter((m) => m.conversationId === c.id)
+            .sort((a, b) => a.order - b.order),
+          { imageMode },
+        ),
+      );
       download(
         exportFileName(
           conversationId ? detail?.conversation.title : undefined,
           new Date().toISOString().slice(0, 10),
           'md',
         ),
-        markdown,
+        parts.join('\n\n---\n\n'),
         'text/markdown',
       );
     } catch (err) {
@@ -208,20 +220,6 @@ function App() {
       await reload();
     } catch (err) {
       setNotice(`导入失败：${err instanceof Error ? err.message : String(err)}`);
-    }
-  };
-
-  const doClear = async () => {
-    if (!confirm('将删除全部本地归档（设置保留）。确定继续？')) return;
-    if (!confirm('再次确认：删除后无法恢复，除非已导出备份。')) return;
-    try {
-      await api.clearAll();
-      setSelectedId(null);
-      setDetail(null);
-      setNotice('已清空全部数据');
-      await reload();
-    } catch (err) {
-      setNotice(`清空失败：${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -291,7 +289,6 @@ function App() {
       <button onClick={() => void doExportJson()}>导出备份</button>
       <button onClick={() => void doExportOpenAI()}>OpenAI 格式</button>
       <button onClick={() => fileRef.current?.click()}>导入</button>
-      <button class="danger" onClick={() => void doClear()}>清空</button>
       <input
         ref={fileRef}
         type="file"
@@ -352,14 +349,14 @@ function App() {
           ))}
         </aside>
 
-        {/* 详情 */}
+        {/* 详情：窄栏阅读宽度（类 ChatGPT/Kimi 消息列） */}
         <main style={{ flex: 1, overflowY: 'auto', padding: '16px 22px' }}>
           {!detail ? (
             <div class="muted" style={{ marginTop: 40, textAlign: 'center' }}>
               选择左侧会话查看详情
             </div>
           ) : (
-            <>
+            <div style={{ maxWidth: 760, margin: '0 auto' }}>
               <div class="row" style={{ marginBottom: 12, gap: 8 }}>
                 <h2 style={{ margin: 0, fontSize: 17 }} class="grow">
                   {detail.conversation.title}
@@ -368,27 +365,7 @@ function App() {
                   打开原网页
                 </button>
                 <button onClick={() => void doExportMarkdown(detail.conversation.id)}>导出 MD</button>
-                <button onClick={() => void doExportJson(detail.conversation.id)}>导出 JSON</button>
                 <button onClick={() => void doExportOpenAI(detail.conversation.id)}>OpenAI</button>
-                <button
-                  class="danger"
-                  onClick={() => {
-                    if (confirm('删除该会话的本地归档？')) {
-                      void api
-                        .deleteConversation(detail.conversation.id)
-                        .then(() => {
-                          setDetail(null);
-                          setSelectedId(null);
-                          void reload();
-                        })
-                        .catch((err: unknown) =>
-                          setNotice(`删除失败：${err instanceof Error ? err.message : String(err)}`),
-                        );
-                    }
-                  }}
-                >
-                  删除
-                </button>
               </div>
               <div class="muted" style={{ marginBottom: 16, fontSize: 12 }}>
                 {PLATFORM_LABEL[detail.conversation.platform]} · {detail.conversation.accountLabel} ·{' '}
@@ -398,8 +375,8 @@ function App() {
               {detail.messages
                 .filter((m) => m.status === 'complete')
                 .map((m) => (
-                  <div key={m.id} style={{ marginBottom: 14 }}>
-                    <div style={{ marginBottom: 4 }}>
+                  <div key={m.id} class={`msg${m.role === 'user' ? ' msg-user' : ''}`}>
+                    <div class="msg-head">
                       <RoleBadge role={m.role} />
                       <span class="muted" style={{ fontSize: 11 }}>
                         {m.timestamp ? fmtTime(m.timestamp) : ''}
@@ -408,7 +385,7 @@ function App() {
                     <MessageBody html={m.contentHtml} text={m.contentText} />
                   </div>
                 ))}
-            </>
+            </div>
           )}
         </main>
       </div>

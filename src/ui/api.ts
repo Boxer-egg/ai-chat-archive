@@ -30,7 +30,6 @@ export const api = {
   deleteConversation: (conversationId: string) => send({ type: PROTOCOL.DELETE_CONVERSATION, conversationId } as ProtocolMessage),
   clearAll: () => send({ type: PROTOCOL.CLEAR_ALL } as ProtocolMessage),
   exportJson: (conversationId?: string) => send({ type: PROTOCOL.EXPORT_JSON, conversationId } as ProtocolMessage),
-  exportMarkdown: (conversationId?: string) => send({ type: PROTOCOL.EXPORT_MARKDOWN, conversationId } as ProtocolMessage),
   exportOpenAI: (conversationId?: string) => send({ type: PROTOCOL.EXPORT_OPENAI, conversationId } as ProtocolMessage),
   importPreview: (backupJson: string) => send({ type: PROTOCOL.IMPORT_PREVIEW, backupJson } as ProtocolMessage),
   importApply: (backupJson: string) => send({ type: PROTOCOL.IMPORT_APPLY, backupJson } as ProtocolMessage),
