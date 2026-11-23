@@ -60,7 +60,15 @@ function roleOf(segment: Element): Role | null {
 /** 克隆后剔除操作行与卡片容器，避免"编辑/复制/分享"等噪音 */
 function clean(segment: Element): { text: string; html?: string } {
   const clone = segment.cloneNode(true) as Element;
-  for (const sel of ['.segment-user-action-row', '.segment-user-actions', '.okc-cards-container', '.segment-assistant-action-row', '[class*=action-row]']) {
+  for (const sel of [
+    '.segment-user-action-row',
+    '.segment-user-actions',
+    '.okc-cards-container',
+    '.segment-assistant-action-row',
+    '[class*=action-row]',
+    // 代码块头部工具条（语言标签 + 复制按钮，2026-11-23 实测 .sticky-release）
+    '.sticky-release',
+  ]) {
     for (const n of Array.from(clone.querySelectorAll(sel))) n.remove();
   }
   return { text: extractText(clone), html: extractHtml(clone) };
@@ -118,17 +126,19 @@ export const kimiAdapter: PlatformAdapter = {
     const role = roleOf(node);
     if (!role) return null;
     if (role === 'assistant') {
-      // 跳过 toolcall 容器（思考过程/工具分析），取真正的回复。
-      // 注意：回复容器自身在 DOM 里也可能位于 toolcall 流程的祖先下，
-      // 所以按"元素自身的 class 是否带 toolcall"判别，而不是祖先。
-      const md = Array.from(node.querySelectorAll('.markdown-container')).find(
+      // 2026-11-23 实机修正：一个回复段内有多个 .markdown-container——
+      // 前面的是思考中间步骤，最后一个是正文（思考过程永远在前）。
+      // 旧版取第一个会采到思考文本、丢失正文与 ASCII 图（用户反馈"没保存全"）。
+      const plain = Array.from(node.querySelectorAll('.markdown-container')).filter(
         (el) => !el.className.toString().includes('toolcall'),
       );
+      const md = plain[plain.length - 1];
       if (md) {
+        const { text, html } = clean(md);
         return {
           role,
-          text: extractText(md),
-          html: extractHtml(md),
+          text,
+          html,
           domIndex: index,
           streaming: index === nodes.length - 1 && this.isStreaming(ctx),
           model: extractModelHint(node),
