@@ -62,6 +62,11 @@ function htmlToMd(html: string, imageMode: 'link' | 'omit' = 'link'): string {
       }
       case 'HR':
         return '\n---\n\n';
+      case 'DETAILS':
+        // 思考过程折叠块：保留标签，GitHub 等 Markdown 渲染器原生支持
+        return `\n\n<details>${kids()}</details>\n\n`;
+      case 'SUMMARY':
+        return `<summary>${kids()}</summary>`;
       case 'TABLE':
         return kids();
       default:

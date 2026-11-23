@@ -8,6 +8,7 @@ const ALLOWED_TAGS = [
   'p', 'br', 'pre', 'code', 'ul', 'ol', 'li', 'blockquote',
   'strong', 'em', 'b', 'i', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'hr', 'span', 'div', 'img',
+  'details', 'summary', // 思考过程折叠块（kimi.ts 生成）
 ];
 
 const ALLOWED_ATTR = ['href', 'title', 'class', 'src', 'alt'];

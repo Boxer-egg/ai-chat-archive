@@ -18,6 +18,7 @@ import type {
 } from '../../core/types';
 import { extractHtml, extractModelHint, extractText, findScrollable, idFromPath } from './base';
 import { pick, type SelectorSpec } from './selectors';
+import { sanitizeHtml } from '../../core/sanitize';
 
 const S = {
   messageList: {
@@ -55,6 +56,48 @@ function roleOf(segment: Element): Role | null {
   if (cls.includes('segment-user')) return 'user';
   if (cls.includes('segment-assistant')) return 'assistant';
   return null;
+}
+
+/** 文本进 HTML 前的转义（思考步骤内容拼接用） */
+function escapeHtmlText(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
+ * 提取思考过程为 <details> 折叠块（2026-11-23 实测两种形态）：
+ * - .toolcall-flow__item：Kimi 思考折叠面板的步骤（标题"使用画布进行编码"等 +
+ *   toolcall 类 markdown-container 内的分析文本），剔除代码块工具条
+ * - 正文容器之前的 plain markdown-container：思考中间步骤文本
+ * 思考不进 contentText（保持搜索与导出正文干净），只随 HTML 归档。
+ */
+function thinkingDetailsHtml(node: Element, bodyMd: Element): string | undefined {
+  const steps: string[] = [];
+  for (const item of Array.from(node.querySelectorAll('.toolcall-flow__item'))) {
+    const title = item.querySelector('.toolcall-title-name-text')?.textContent?.trim();
+    const content = [...item.querySelectorAll('.markdown-container')]
+      .map((m) => {
+        const c = m.cloneNode(true) as Element;
+        for (const n of Array.from(c.querySelectorAll('.sticky-release'))) n.remove();
+        return c.textContent?.trim() ?? '';
+      })
+      .filter(Boolean)
+      .join('\n');
+    if (!title && !content) continue;
+    steps.push(
+      (title ? `<p><strong>${escapeHtmlText(title)}</strong></p>` : '') +
+        (content ? `<p>${escapeHtmlText(content)}</p>` : ''),
+    );
+  }
+  const plain = Array.from(node.querySelectorAll('.markdown-container')).filter(
+    (el) => !el.className.toString().includes('toolcall'),
+  );
+  const bodyIdx = plain.indexOf(bodyMd);
+  for (const m of plain.slice(0, bodyIdx === -1 ? 0 : bodyIdx)) {
+    const t = m.textContent?.trim();
+    if (t) steps.push(`<p>${escapeHtmlText(t)}</p>`);
+  }
+  if (steps.length === 0) return undefined;
+  return `<details><summary>思考过程（${steps.length} 步）</summary>${steps.join('')}</details>`;
 }
 
 /** 克隆后剔除操作行与卡片容器，避免"编辑/复制/分享"等噪音 */
@@ -135,10 +178,13 @@ export const kimiAdapter: PlatformAdapter = {
       const md = plain[plain.length - 1];
       if (md) {
         const { text, html } = clean(md);
+        // 思考过程归档为 details 折叠块，拼在正文前（contentText 只含正文）
+        const thinking = thinkingDetailsHtml(node, md);
+        const merged = thinking ? sanitizeHtml(thinking + (html ?? '')) : html;
         return {
           role,
           text,
-          html,
+          html: merged,
           domIndex: index,
           streaming: index === nodes.length - 1 && this.isStreaming(ctx),
           model: extractModelHint(node),
