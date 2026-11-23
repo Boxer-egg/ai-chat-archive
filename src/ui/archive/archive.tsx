@@ -366,6 +366,25 @@ function App() {
                 </button>
                 <button onClick={() => void doExportMarkdown(detail.conversation.id)}>导出 MD</button>
                 <button onClick={() => void doExportOpenAI(detail.conversation.id)}>OpenAI</button>
+                <button
+                  class="danger"
+                  onClick={() => {
+                    if (confirm('删除该会话的本地归档？')) {
+                      void api
+                        .deleteConversation(detail.conversation.id)
+                        .then(() => {
+                          setDetail(null);
+                          setSelectedId(null);
+                          void reload();
+                        })
+                        .catch((err: unknown) =>
+                          setNotice(`删除失败：${err instanceof Error ? err.message : String(err)}`),
+                        );
+                    }
+                  }}
+                >
+                  删除
+                </button>
               </div>
               <div class="muted" style={{ marginBottom: 16, fontSize: 12 }}>
                 {PLATFORM_LABEL[detail.conversation.platform]} · {detail.conversation.accountLabel} ·{' '}

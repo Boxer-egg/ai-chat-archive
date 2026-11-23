@@ -88,7 +88,16 @@ input[type='text'], select {
   color: var(--muted);
 }
 .msg-body table { border-collapse: collapse; margin-bottom: 10px; }
-.msg-body th, .msg-body td { border: 1px solid var(--border); padding: 4px 10px; }
+/* Kimi/ChatGPT 风格：无竖线，仅行分隔线 */
+.msg-body th, .msg-body td {
+  padding: 8px 20px 8px 0;
+  text-align: left;
+  vertical-align: top;
+  border: none;
+}
+.msg-body thead th { border-bottom: 2px solid var(--border); font-weight: 600; }
+.msg-body tbody tr { border-bottom: 1px solid var(--border); }
+.msg-body tbody tr:last-child { border-bottom: none; }
 .msg-body a { color: var(--accent); }
 .msg-body img { max-width: 100%; }
 
