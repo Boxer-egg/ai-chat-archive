@@ -5,6 +5,7 @@ import '../styles.css';
 import { api } from '../api';
 import { sanitizeHtml } from '../../core/sanitize';
 import { exportFileName } from '../../core/export/filename';
+import { ARCHIVE_CHANNEL } from '../../shared/constants';
 import type { Account, Conversation, Message } from '../../core/types';
 import type { SearchHitConversation } from '../../core/protocol';
 
@@ -90,6 +91,23 @@ function App() {
 
   useEffect(() => {
     void reload();
+  }, [reload]);
+
+  // SW 同步完成 → 自动刷新（技术方案 §2.2 第 7 步；500ms 节流合并连续通知）
+  useEffect(() => {
+    const ch = new BroadcastChannel(ARCHIVE_CHANNEL);
+    let timer: number | undefined;
+    ch.onmessage = () => {
+      if (timer !== undefined) return;
+      timer = window.setTimeout(() => {
+        timer = undefined;
+        void reload();
+      }, 500);
+    };
+    return () => {
+      ch.close();
+      if (timer !== undefined) clearTimeout(timer);
+    };
   }, [reload]);
 
   const openConversation = async (id: string) => {

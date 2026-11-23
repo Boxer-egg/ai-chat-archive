@@ -5,6 +5,7 @@
 import type { Conversation, SyncState } from '../core/types';
 import type { SnapshotPayload } from '../core/protocol';
 import type { MergeResult } from '../core/types';
+import { ARCHIVE_CHANNEL } from '../shared/constants';
 import { mergeSnapshot } from '../core/merge/merge-snapshot';
 import { STORES } from '../core/db/schema';
 import {
@@ -50,6 +51,20 @@ export class SyncService {
       getAccount(readTx, `${payload.adapterId}:${payload.accountKey}`),
     ]);
     await readDone;
+
+    // 首屏 DOM 未就绪的空快照（SPA 异步渲染）不产生"未命名会话 0 条"残留，
+    // 等 MutationObserver 触发的下一波有内容的快照再建会话
+    if (!existingConv && payload.raws.length === 0) {
+      return {
+        inserted: 0,
+        updated: 0,
+        touched: 0,
+        skipped: 0,
+        messageCount: 0,
+        conversationTitleChanged: false,
+        orderRenumbered: false,
+      };
+    }
 
     const out = await mergeSnapshot({
       conversationId,
@@ -123,6 +138,7 @@ export class SyncService {
       throw err;
     }
     await writeDone;
+    this.notifySynced(conversationId);
 
     return {
       inserted: out.inserted,
@@ -133,6 +149,15 @@ export class SyncService {
       conversationTitleChanged: titleChanged,
       orderRenumbered: out.renumbered,
     };
+  }
+
+  /** 通知已打开的归档页/弹窗刷新（BroadcastChannel 非网络 API，不受 CSP connect-src 限制） */
+  private notifySynced(conversationId: string): void {
+    try {
+      new BroadcastChannel(ARCHIVE_CHANNEL).postMessage({ type: 'synced', conversationId });
+    } catch {
+      /* 通知失败不影响同步结果 */
+    }
   }
 }
 

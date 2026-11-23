@@ -16,3 +16,5 @@ export const TIMING = {
 export const ORDER_GAP = 1024;
 export const DEFAULT_ACCOUNT_KEY = 'default';
 export const DEFAULT_ACCOUNT_LABEL = '默认账号';
+/** SW → 已打开归档页/弹窗 的同步通知频道（技术方案 §2.2 第 7 步） */
+export const ARCHIVE_CHANNEL = 'ai-chat-archive';

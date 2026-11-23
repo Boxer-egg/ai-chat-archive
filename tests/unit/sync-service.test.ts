@@ -61,4 +61,20 @@ describe('SyncService.upsertSnapshot（真机异常复现）', () => {
     expect(again.inserted).toBe(0);
     expect(again.messageCount).toBe(10);
   });
+
+  it('空快照不建"未命名会话 0 条"残留（首屏 DOM 未就绪）', async () => {
+    const db = await openDB();
+    const svc = new SyncService({ db });
+    const payload = buildPayload();
+    const result = await svc.upsertSnapshot({ ...payload, raws: [], platformMessageCount: 0 });
+    expect(result.messageCount).toBe(0);
+    expect(result.inserted).toBe(0);
+    // 会话记录不应被创建
+    const rtx = db.transaction('conversations', 'readonly');
+    const req = rtx.objectStore('conversations').get(payload.conversation.platformConversationId && `${payload.adapterId}:${payload.accountKey}:${payload.conversation.platformConversationId}`);
+    const conv = await new Promise((resolve) => {
+      req.onsuccess = () => resolve(req.result);
+    });
+    expect(conv).toBeUndefined();
+  });
 });
