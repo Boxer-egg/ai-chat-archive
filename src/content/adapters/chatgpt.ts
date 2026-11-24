@@ -123,10 +123,16 @@ export const chatgptAdapter: PlatformAdapter = {
       return { role: 'user', text: extractText(node), domIndex: index };
     }
     if (isAssistant) {
+      // 2026-11-24 实测：代码块头部工具条 .ActionBar（语言标签"纯文本"+复制按钮）
+      // 在 MarkdownRoot 内，剔除避免混入正文（代码换行对齐由 styles.css 的
+      // .msg-body code white-space: pre 保障——ChatGPT 代码块是 <code> 非 <pre>，
+      // 消毒后 class 被剥，默认 white-space 会把换行折叠）
+      const clone = node.cloneNode(true) as Element;
+      for (const n of Array.from(clone.querySelectorAll('[class*=ActionBar]'))) n.remove();
       return {
         role: 'assistant',
-        text: extractText(node),
-        html: extractHtml(node),
+        text: extractText(clone),
+        html: extractHtml(clone),
         domIndex: index,
         streaming: index === nodes.length - 1 && this.isStreaming(ctx),
         model: extractModelHint(node),

@@ -96,4 +96,27 @@ describe('ChatGPT 可见性过滤与 GPTs URL（借鉴 pionxzh/chatgpt-exporter�
     expect(chatgptAdapter.match(new URL('https://chatgpt.com/'))).toBe(false);
     expect(chatgptAdapter.match(new URL('https://chatgpt.com/share/abc-123'))).toBe(false);
   });
+
+  it('代码块头部工具条（.ActionBar：语言标签+复制按钮）不混入正文', () => {
+    const html = `
+      <div class="MarkdownRoot">
+        <p>你可以先做：</p>
+        <div class="relative Root-iW7ipz">
+          <div class="flex items-center ActionBar-KWWAct"><span>纯文本</span><button>复制</button></div>
+          <div class="text-size-chat overflow-auto">
+            <code class="whitespace-pre CodeContent-ybJ8Tl"><span>  ┌────┐
+  │框 │
+  └────┘</span></code>
+          </div>
+        </div>
+      </div>`;
+    const ctx = makeCtx('https://chatgpt.com/c/6abd1314-6c44-83ea-9ed7-69a23e89bda0', docOf(html));
+    const raw = chatgptAdapter.parseMessage(ctx.document.querySelector('.MarkdownRoot')!, ctx);
+    expect(raw!.text).toContain('┌────┐');
+    expect(raw!.text).not.toContain('纯文本');
+    expect(raw!.text).not.toContain('复制');
+    expect(raw!.html).not.toContain('ActionBar');
+    // 换行保留（对齐的关键）
+    expect(raw!.text).toContain('\n  │框');
+  });
 });
